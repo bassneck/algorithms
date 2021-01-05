@@ -70,13 +70,32 @@ export function * findPathBreadthFirst(adjacencyList: number[][], startNode: num
 
     for (const node of adjacentNodes) {
       if (node === targetNode) {
-        console.log('Found', node)
         return { startNode, targetNode, currentNode, visitedNodes, queue }
       } else if (!visitedNodes.includes(node) && !queue.includes(node)) {
         queue.push(node)
       }
     }
   }
+}
 
-  console.log('Visited', visitedNodes.length, 'nodes')
+export function * findPathDepthFirst(adjacencyList: number[][], startNode: number, targetNode: number): Generator<SearchContext> {
+  const queue: number[] = [startNode]
+  const visitedNodes: number[] = []
+
+  while (queue.length > 0) {
+    const currentNode = queue.pop()!
+
+    const adjacentNodes = adjacencyList[currentNode]
+    visitedNodes.push(currentNode)
+
+    yield { startNode, targetNode, currentNode, visitedNodes, queue }
+
+    for (const node of adjacentNodes) {
+      if (node === targetNode) {
+        return { startNode, targetNode, currentNode, visitedNodes, queue }
+      } else if (!visitedNodes.includes(node) && !queue.includes(node)) {
+        queue.push(node)
+      }
+    }
+  }
 }
