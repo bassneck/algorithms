@@ -1,69 +1,22 @@
-export function gridToAdjacencyList(grid: number[][]): number[][] {
-  const result: number[][] = []
-
-  function cellId(row: number, col: number, maxCol: number) {
-    return (row + col + ((maxCol - 1) * row))
-  }
-
-  for (let i = 0; i < grid.length; i++) {
-    const row = grid[i]
-
-    for (let j = 0; j < row.length; j++) {
-      const nodeId = cellId(i, j, row.length)
-      const nodeValue = row[j]
-      const adjacentNodes: number[] = []
-      
-      if (i > 0) {
-        // node above
-        if (grid[i - 1][j] === 0) {
-          adjacentNodes.push(cellId(i - 1, j, row.length))
-        }
-      }
-
-      if (j < row.length - 1) {
-        // node on the right
-        if (grid[i][j + 1] === 0) {
-          adjacentNodes.push(cellId(i, j + 1, row.length))
-        }
-      }
-
-      if (i < grid.length - 1) {
-        // node below
-        if (grid[i + 1][j] === 0) {
-          adjacentNodes.push(cellId(i + 1, j, row.length))
-        }
-      }
-
-      if (j > 0) {
-        // node on the left
-        if (grid[i][j - 1] === 0) {
-          adjacentNodes.push(cellId(i, j - 1, row.length))
-        }
-      }
-
-      result.push(adjacentNodes)
-    }
-  }
-
-  return result
-}
-
+import { Graph } from './graph'
 export interface SearchContext {
-  startNode: number,
-  targetNode: number,
-  currentNode: number,
-  visitedNodes: number[],
-  queue: number[]
+  startNode: string,
+  targetNode: string,
+  currentNode: string,
+  visitedNodes: string[],
+  queue: string[]
 }
 
-export function * findPathBreadthFirst(adjacencyList: number[][], startNode: number, targetNode: number): Generator<SearchContext> {
-  const queue: number[] = [startNode]
-  const visitedNodes: number[] = []
+type PathNode = [node: number, parent?: number]
+
+export function * traverseBreadthFirst(graph: Graph, startNode: string, targetNode: string): Generator<SearchContext> {
+  const queue: string[] = [startNode]
+  const visitedNodes: string[] = []
 
   while (queue.length > 0) {
     const currentNode = queue.shift()!
 
-    const adjacentNodes = adjacencyList[currentNode]
+    const adjacentNodes = graph.adjacentNodes(currentNode)
     visitedNodes.push(currentNode)
 
     yield { startNode, targetNode, currentNode, visitedNodes, queue }
@@ -78,14 +31,14 @@ export function * findPathBreadthFirst(adjacencyList: number[][], startNode: num
   }
 }
 
-export function * findPathDepthFirst(adjacencyList: number[][], startNode: number, targetNode: number): Generator<SearchContext> {
-  const queue: number[] = [startNode]
-  const visitedNodes: number[] = []
+export function * traverseDepthFirst(graph: Graph, startNode: string, targetNode: string): Generator<SearchContext> {
+  const queue: string[] = [startNode]
+  const visitedNodes: string[] = []
 
   while (queue.length > 0) {
     const currentNode = queue.pop()!
 
-    const adjacentNodes = adjacencyList[currentNode]
+    const adjacentNodes = graph.adjacentNodes(currentNode)
     visitedNodes.push(currentNode)
 
     yield { startNode, targetNode, currentNode, visitedNodes, queue }

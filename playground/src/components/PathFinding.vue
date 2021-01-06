@@ -27,14 +27,20 @@
 
     <div class="grid grid-flow-row gap-px">
       <div 
-        v-for="(row, i) in grid" :key="`row-${i}`"
+        v-for="(row, i) in grid.cells" :key="`row-${i}`"
         class="grid grid-flow-col auto-cols-fr gap-x-px h-8"
       >
         <div 
           v-for="(col, j) in row" :key="`col-${j}`"
-          :class="['text-xs', cellClassBinding(i, j, row.length)]"
+          :class="['text-xs', cellClassBinding(grid, i, j)]"
         >
-          {{ getCellId(i, j, row.length) }}
+          {{ grid.cellId(i, j) }}
+          <template v-if="`${grid.cellId(i, j)}` === chosenStartNode">
+            🕵️‍♀️
+          </template>
+          <template v-if="`${grid.cellId(i, j)}` === chosenTargetNode">
+            🍰
+          </template>
         </div>
       </div>
     </div>
@@ -43,9 +49,10 @@
 
 <script lang="ts">
 import { defineComponent, ref, computed, unref } from 'vue';
-import { gridToAdjacencyList, findPathBreadthFirst, findPathDepthFirst, SearchContext } from '../../../path-finding/index'
+import { Grid, gridToGraph, gridCellId } from '../../../path-finding/grid'
+import { traverseBreadthFirst, traverseDepthFirst, SearchContext } from '../../../path-finding/index'
 
-const grid = [
+const gridDefinition = [
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
   [0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0],
   [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -76,7 +83,6 @@ function nextUntilDone(generator: Generator, ms: number, callback: (...arg: any)
       window.clearInterval(interval)
     }
 
-    console.log(result)
     callback(result)
   }, ms)
 }
@@ -84,32 +90,29 @@ function nextUntilDone(generator: Generator, ms: number, callback: (...arg: any)
 export default defineComponent({
   setup() {
     const algorithms = [
-      { name: 'BFS', func: findPathBreadthFirst },
-      { name: 'DFS', func: findPathDepthFirst },
+      { name: 'BFS', func: traverseBreadthFirst },
+      { name: 'DFS', func: traverseDepthFirst },
     ]
-    const chosenStartNode = ref<number>(0)
-    const chosenTargetNode = ref<number>(137)
+    const chosenStartNode = ref<string>('0')
+    const chosenTargetNode = ref<string>('137')
     const chosenAlgorithm = ref<{ name: string, func: Function}>(algorithms[0])
 
-    const adjacencyList = gridToAdjacencyList(grid)
+    const grid = new Grid(gridDefinition)
+    const graph = gridToGraph(grid)
 
     const searchContext = ref<SearchContext>()
 
     function findPath() {
-      const generator = chosenAlgorithm.value.func(adjacencyList, chosenStartNode.value, chosenTargetNode.value)
+      const generator = chosenAlgorithm.value.func(graph, chosenStartNode.value.toString(), chosenTargetNode.value.toString())
 
       nextUntilDone(generator, 25, (result) => {
         searchContext.value = result.value!
       })
     }
 
-    function getCellId(row: number, col: number, maxCol: number): number {
-      return (row + col + ((maxCol - 1) * row))
-    }
-
-    function cellClassBinding(row: number, col: number, width: number) {
-      const cellId = getCellId(row, col, width)
-      const cellValue = grid[row][col]
+    function cellClassBinding(grid: Grid, row: number, col: number) {
+      const cellId = grid.cellId(row, col).toString()
+      const cellValue = grid.cellAt(row, col)
       const searchContextValue = searchContext.value
 
       if (cellValue === 1) {
@@ -129,14 +132,14 @@ export default defineComponent({
 
     return {
       grid: grid,
-      adjacencyList,
+      graph,
       searchContext,
       findPath,
       algorithms,
       chosenAlgorithm,
       chosenStartNode,
       chosenTargetNode,
-      getCellId,
+      gridCellId,
       cellClassBinding
     }
   }
